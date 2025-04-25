@@ -34,18 +34,22 @@ public class AlquilerCochesException extends SQLException {
 		/*
 		 * A completar por el alumnado
 		 */
-		if(code == 1) {
-			System.out.println("Cliente inexistente");
-		}
-		if(code == 2) {
-			System.out.println("Vehículo inexistente");
-		}
-		if(code == 3) {
-			System.out.println("El número de días será mayor que cero");
-		}
-		if(code == 4) {
-			System.out.println("El vehículo no está disponible");
-		}
+
+		this.codigo = code;
+
+		switch (code) {
+			case 1:
+				mensaje = "Cliente inexistente";
+				break;
+			case 2:
+				mensaje = "Vehículo inexistente";
+				break;
+			case 3:
+				mensaje = "El número de días será mayor que cero";
+				break;
+			case 4:
+				mensaje = "El vehículo no está disponible";
+				break;}
 		LOGGER.debug(mensaje);
 
 		// Traza_de_pila

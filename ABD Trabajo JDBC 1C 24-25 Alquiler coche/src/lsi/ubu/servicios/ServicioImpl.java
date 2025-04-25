@@ -70,6 +70,15 @@ public class ServicioImpl implements Servicio {
 			    throw new AlquilerCochesException(1);
 			}
 			
+			//Comprobamos que el vehiculo existe
+			st = con.prepareStatement("SELECT COUNT(*) FROM Vehiculos WHERE matricula = ?");
+			st.setString(1, matricula);
+			rs = st.executeQuery();
+			rs.next();
+			if (rs.getInt(1) == 0) {
+			    throw new AlquilerCochesException(2);
+			}
+			
 		} catch (SQLException e) {
 			// Completar por el alumno
 
