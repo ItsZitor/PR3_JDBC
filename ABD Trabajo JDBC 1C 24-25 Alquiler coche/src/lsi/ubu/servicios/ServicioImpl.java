@@ -79,15 +79,25 @@ public class ServicioImpl implements Servicio {
 			    throw new AlquilerCochesException(2);
 			}
 			
-		} catch (SQLException e) {
-			// Completar por el alumno
-
-			LOGGER.debug(e.getMessage());
-
-			throw e;
+		}catch(AlquilerCochesException e) {
+            if (con != null) con.rollback();
+            throw e; //Propaga la excepcion	
+        }catch (SQLException e) {
+        	try {
+        		if (con != null)
+        			con.rollback(); 
+        	} catch (SQLException ex) { 
+        		LOGGER.error("Error al hacer rollback", ex); 
+            }
 
 		} finally {
-			/* A rellenar por el alumnado*/
+			try {
+				if (rs != null) rs.close();
+		        if (st != null) st.close();
+		        if (con != null) con.close();
+		    } catch (SQLException e) {
+		        LOGGER.debug("Error cerrando recursos: " + e.getMessage());
+		    }
 		}
 	}
 }
