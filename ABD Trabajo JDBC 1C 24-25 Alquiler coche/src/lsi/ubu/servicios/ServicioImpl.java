@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +40,7 @@ public class ServicioImpl implements Servicio {
 
 		try {
 			con = pool.getConnection();
-			/* A completar por el alumnado... */
+			con.setAutoCommit(false);
 
 			/* ================================= AYUDA R�PIDA ===========================*/
 			/*
@@ -67,7 +68,7 @@ public class ServicioImpl implements Servicio {
 			rs = st.executeQuery();
 			rs.next();
 			if (rs.getInt(1) == 0) {
-			    throw new AlquilerCochesException(1);
+			    throw new AlquilerCochesException(AlquilerCochesException.CLIENTE_NO_EXIST);
 			}
 			
 			//Comprobamos que el vehiculo existe
@@ -76,8 +77,28 @@ public class ServicioImpl implements Servicio {
 			rs = st.executeQuery();
 			rs.next();
 			if (rs.getInt(1) == 0) {
-			    throw new AlquilerCochesException(2);
+			    throw new AlquilerCochesException(AlquilerCochesException.VEHICULO_NO_EXIST);
 			}
+		
+			//Comprobar que el vehiculo está disponible, comprobamos si la fecha de fin es null o es mayor a la fecha actual, 
+            //si lo es no está disponible
+            st = con.prepareStatement("SELECT fecha_ini, fecha_fin FROM Reservas WHERE matricula = ?");
+            st.setString(1 , matricula);
+            rs = st.executeQuery();
+            if(rs.next()) {
+                java.sql.Date fecha_fin = rs.getDate("fecha_fin");
+                if ( fecha_fin == null || fecha_fin.toLocalDate().isBefore(LocalDate.now())) {
+                    st.close();
+                    rs.close();
+                    throw new AlquilerCochesException(AlquilerCochesException.VEHICULO_OCUPADO);
+                }
+            }
+
+            //limpiar los datos de las comprobaciones
+            st.clearBatch();
+            st.clearParameters();
+            st.close();
+            rs.close();
 			
 		}catch(AlquilerCochesException e) {
             if (con != null) con.rollback();
