@@ -38,16 +38,16 @@ public class AlquilerCochesException extends SQLException {
 		this.codigo = code;
 
 		switch (code) {
-			case 1:
+			case CLIENTE_NO_EXIST:
 				mensaje = "Cliente inexistente";
 				break;
-			case 2:
+			case VEHICULO_NO_EXIST:
 				mensaje = "Vehículo inexistente";
 				break;
-			case 3:
+			case SIN_DIAS:
 				mensaje = "El número de días será mayor que cero";
 				break;
-			case 4:
+			case VEHICULO_OCUPADO:
 				mensaje = "El vehículo no está disponible";
 				break;}
 		LOGGER.debug(mensaje);
