@@ -31,10 +31,6 @@ public class AlquilerCochesException extends SQLException {
 
 	public AlquilerCochesException(int code) {
 
-		/*
-		 * A completar por el alumnado
-		 */
-
 		this.codigo = code;
 
 		switch (code) {

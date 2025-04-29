@@ -99,6 +99,83 @@ public class ServicioImpl implements Servicio {
             st.clearParameters();
             st.close();
             rs.close();
+            
+            //Ejecutar el alquiler
+			//Añadir en la tabla de reservas
+			st = con.prepareStatement("INSERT INTO Reservas VALUES (seq_reservas.nextVal, ?, ?, ?, ?)");
+			
+			java.sql.Date fechaIniSql = new java.sql.Date(fechaIni.getTime());
+			
+			st.setString(1, nifCliente);
+			st.setString(2, matricula);
+			st.setDate(3, fechaIniSql);
+			
+		    if (fechaFin != null) {
+		        java.sql.Date fechaFinSql = new java.sql.Date(fechaFin.getTime());
+		        st.setDate(4, fechaFinSql);  
+		    } else {
+		        st.setNull(4, java.sql.Types.DATE);  // Si la fecha es null, establecer el valor como NULL en la base de datos
+		    }
+		    
+			int resulReserva = st.executeUpdate();
+			
+			//Añadir en la tabla de facturas
+			//Calcular el importe de la gasolina - para el total de la factura y la segunda linea de la factura
+			st = con.prepareStatement("SELECT capacidad_deposito, precio_por_litro, precio_combustible.tipo_combustible FROM modelos JOIN vehiculos"
+					+ " ON (modelos.id_modelo = vehiculos.id_modelo) "
+					+ "JOIN precio_combustible ON (modelos.tipo_combustible = precio_combustible.tipo_combustible)"
+					+ " WHERE vehiculos.matricula = ?");
+			st.setString(1, matricula);
+			ResultSet rsGasolina = st.executeQuery();
+			rsGasolina.next();
+			double importeGasolina = rsGasolina.getInt("capacidad_deposito") * rsGasolina.getDouble("precio_por_litro");
+			
+			//Calcular el importe total de la factura
+			st = con.prepareStatement("SELECT precio_cada_dia FROM modelos JOIN vehiculos ON (modelos.id_modelo = vehiculos.id_modelo)"
+					+ "WHERE matricula = ?");
+			st.setString(1, matricula);
+			rs = st.executeQuery();
+			rs.next();
+			
+			double importeAlquiler = rs.getDouble("precio_cada_dia") * diasDiff;
+			
+			st = con.prepareStatement("INSERT INTO facturas (nroFactura, importe, cliente)"
+					+ "VALUES (seq_num_fact.nextVal, ?, ?)");
+			st.setDouble(1, importeAlquiler + importeGasolina);
+			st.setString(2, nifCliente);
+			
+			int resulFactura = st.executeUpdate();
+			
+			//Añadir en la tabla lineas_factura
+			//Crear primera linea de factura
+			String concepto1 = diasDiff + " dias de alquiler, vehiculo modelo ";
+			st = con.prepareStatement("SELECT id_modelo FROM vehiculos WHERE matricula = ?");
+			st.setString(1, matricula);
+			ResultSet rsMatricula = st.executeQuery();
+			rsMatricula.next();
+			concepto1 += "" + rsMatricula.getString("id_modelo");
+			rsMatricula.close();
+			
+			st = con.prepareStatement("INSERT INTO lineas_factura (nroFactura, concepto, importe)"
+					+ "VALUES (seq_num_fact.currval, ?, ?)");
+			
+			st.setString(1, concepto1);
+			st.setDouble(2, importeAlquiler);
+			int resulLineaFactura1 = st.executeUpdate();
+			
+			//Crear segunda linea de factura
+			String concepto2 = "Deposito lleno de " + rsGasolina.getInt("capacidad_deposito") + " litros de " + rsGasolina.getString("tipo_combustible")+ " ";
+			
+			
+			st = con.prepareStatement("INSERT INTO lineas_factura (nroFactura, concepto, importe)"
+					+ "VALUES (seq_num_fact.currval, ?, ?)");
+			
+			st.setString(1, concepto2);
+			st.setDouble(2, importeGasolina);
+			int resulLineaFactura2 = st.executeUpdate();
+			rsGasolina.close();
+			
+			con.commit();
 			
 		}catch(AlquilerCochesException e) {
             if (con != null) con.rollback();
